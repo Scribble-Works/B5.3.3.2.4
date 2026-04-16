@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AssignmentX Math Game</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --wood-brown: #5d4037;
+            --wood-grain: #795548; 
+            --mathly-blue: #00d2ff;
+            --mathly-yellow: #fbc531;
+            --mathly-red: #e84118;
+            --mathly-green: #2ecc71;
+            --glass-white: rgba(255, 255, 255, 0.95);
+            --rope-color: #a1887f;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body { 
+            font-family: 'Inter', sans-serif; 
+            background: linear-gradient(rgba(10, 25, 47, 0.4), rgba(10, 25, 47, 0.4)), url('background.jpg');
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            min-height: 100vh; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            overflow: hidden;
+            position: relative;
+        }
+
+        #bg-canvas { position: absolute; inset: 0; pointer-events: none; z-index: 1; opacity: 0.25; }
+
+        .character-img {
+            position: absolute; 
+            z-index: 5; 
+            filter: drop-shadow(0 10px 15px rgba(0,0,0,0.3));
+            animation: float 3.5s ease-in-out infinite;
+            pointer-events: none;
+        }
+        
+        #panda-main { width: 220px; top: -60px; right: -100px; --r: 12deg; transform: rotate(var(--r)); }
+        #mouse-main { width: 200px; top: -50px; left: -100px; --r: -12deg; transform: rotate(var(--r)); }
+
+        @keyframes float { 
+            0%, 100% { transform: translateY(0) rotate(var(--r)); } 
+            50% { transform: translateY(-15px) rotate(var(--r)); } 
+        }
+
+        .game-area-container {
+            display: none; 
+            width: 92%; 
+            max-width: 440px;
+            z-index: 10;
+            position: relative;
+            animation: zoomIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            padding-top: 40px; 
+        }
+
+        .active { display: block; }
+        @keyframes zoomIn { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+        .wood-title-banner {
+            background: linear-gradient(135deg, var(--wood-grain) 0%, var(--wood-brown) 100%);
+            border: 4px solid #3e2723;
+            border-radius: 15px 50px 20px 45px; 
+            padding: 18px 25px;
+            box-shadow: 0 12px 24px rgba(0,0,0,0.4), inset 0 2px 8px rgba(255,255,255,0.1);
+            margin-bottom: 35px; 
+            position: relative;
+            z-index: 11;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transform-origin: center -100vh;
+            animation: sway 6s ease-in-out infinite;
+        }
+
+        .wood-title-banner::before, .wood-title-banner::after {
+            content: ''; position: absolute; top: -100vh; width: 8px; height: 100vh; 
+            background: repeating-linear-gradient(0deg, var(--rope-color), var(--rope-color) 5px, #8d6e63 10px);
+            border-radius: 4px; box-shadow: 2px 0 5px rgba(0,0,0,0.3); z-index: -1;
+        }
+        .wood-title-banner::before { left: 40px; }
+        .wood-title-banner::after { right: 40px; }
+
+        @keyframes sway { 0%, 100% { transform: rotate(-1deg); } 50% { transform: rotate(1deg); } }
+
+        .banner-logo {
+            width: 60px; height: 60px; object-fit: contain; position: absolute;
+            left: 20px; filter: drop-shadow(0 0 15px rgba(255, 255, 255, 0.9));
+        }
+
+        .wood-title-banner h2 {
+            font-size: 1.2rem; color: #fff9c4; font-weight: 900; text-transform: uppercase;
+            letter-spacing: 1px; text-shadow: 2px 2px 0px rgba(0,0,0,0.5); margin-left: 55px;
+        }
+
+        .card { 
+            width: 100%; background: var(--glass-white); backdrop-filter: blur(12px); 
+            border: 6px solid var(--wood-brown); border-radius: 40px; 
+            padding: 30px; text-align: center; box-shadow: 0 25px 50px rgba(0,0,0,0.5); 
+            position: relative; z-index: 12;
+        }
+
+        .mission-header { background: var(--wood-brown); color: white; padding: 15px; border-radius: 20px; margin-bottom: 20px; }
+        .btn-green { width: 100%; padding: 16px; border: none; border-radius: 20px; background: var(--mathly-green); color: white; font-weight: 900; font-size: 1.1rem; cursor: pointer; text-transform: uppercase; box-shadow: 0 6px 0 #27ae60; margin-bottom: 5px; transition: transform 0.1s; }
+        .btn-green:active { transform: translateY(4px); box-shadow: 0 2px 0 #27ae60; }
+        
+        .btn-tool { flex: 1; background: white; border: 2px solid var(--wood-brown); color: var(--wood-brown); padding: 12px 5px; border-radius: 12px; font-size: 0.8rem; font-weight: 800; cursor: pointer; }
+        .btn-exit { border-color: var(--mathly-red) !important; color: var(--mathly-red) !important; }
+        .tool-row { display: flex; justify-content: center; gap: 10px; margin-top: 15px; width: 100%; }
+        
+        .timer-container { width: 100%; height: 14px; background: #eee; border-radius: 10px; margin-bottom: 12px; overflow: hidden; border: 2px solid #ddd; }
+        #timer-bar { width: 100%; height: 100%; background: var(--mathly-red); transition: width 1s linear; }
+        
+        .chart-frame { background: rgba(255,255,255,0.7); border: 3px solid #d7ccc8; border-radius: 20px; padding: 15px; margin: 15px 0; height: 160px; display: flex; align-items: flex-end; justify-content: center; position: relative; overflow: hidden;}
+        .liquid-fill { width: 100%; background: linear-gradient(180deg, var(--mathly-blue), #00a8cc); transition: height 1s ease; position: absolute; bottom: 0; left: 0; border-top: 4px solid white;}
+        
+        .key-badge { background: #fff9c4; border: 2px dashed #fbc02d; padding: 10px; border-radius: 12px; font-weight: 900; color: #856404; font-size: 0.9rem; margin-bottom: 12px; }
+        .question-box { background: white; border-left: 10px solid var(--mathly-blue); padding: 15px; text-align: left; font-size: 1rem; font-weight: 800; border-radius: 0 20px 20px 0; }
+        input { width: 100%; padding: 12px; border-radius: 18px; border: 3px solid #dfe6e9; font-size: 2rem; text-align: center; font-weight: 900; margin: 12px 0; outline: none; }
+
+        .level-map { display: flex; justify-content: center; gap: 8px; margin-top: 20px; }
+        .lvl-dot { width: 45px; height: 45px; border-radius: 14px; background: white; border: 3px solid #d7ccc8; display: flex; align-items: center; justify-content: center; font-weight: 900; cursor: pointer; font-size: 1.1rem; }
+        .lvl-dot.active-lvl { background: var(--mathly-yellow); color: white; border-color: #f9a825; }
+        .lvl-dot.locked { opacity: 0.4; cursor: not-allowed; }
+
+        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 100; justify-content: center; align-items: center; }
+        .modal-content { background: white; padding: 30px; border-radius: 35px; border: 6px solid var(--wood-brown); width: 85%; max-width: 380px; text-align: center; }
+    </style>
+</head>
+<body>
+
+    <canvas id="bg-canvas"></canvas>
+
+    <div id="scr-start" class="game-area-container active">
+        <img src="mouse.png" id="mouse-main" class="character-img" alt="Mouse">
+        <img src="panda.png" id="panda-main" class="character-img" alt="Panda">
+        <div class="wood-title-banner">
+            <img src="logo.png" class="banner-logo" alt="Logo">
+            <h2>ASSIGNMENTX - BASIC 5</h2>
+        </div>
+        <div class="card">
+            <div class="mission-header"><h1 style="font-size: 1.2rem; text-transform: uppercase; font-weight: 900;">Geometry and Measurement: Measurement</h1></div>
+            <p style="font-weight: 800; color: var(--wood-brown); margin-bottom: 25px; font-size: 1rem;">B5.3.3.2.4: Demonstrate an understanding of capacity by describing the relationship betweencapacity and volume as well as litre and 10cm^3.</p>
+            <button class="btn-green" onclick="startMission()">BEGIN MISSION</button>
+            <div class="tool-row">
+                <button class="btn-tool" onclick="toggleModal(true)">Lab Rules</button>
+                <button class="btn-tool btn-mute" onclick="toggleAudio()">🔊 SFX: ON</button>
+                <button class="btn-tool" style="color:var(--mathly-red)" onclick="resetData()">RESET</button>
+            </div>
+            <div class="level-map" id="map-ui"></div>
+        </div>
+    </div>
+
+    <div id="scr-game" class="game-area-container">
+        <img src="mouse.png" id="mouse-main" class="character-img" alt="Mouse">
+        <img src="panda.png" id="panda-main" class="character-img" alt="Panda">
+        <div class="wood-title-banner">
+            <img src="logo.png" class="banner-logo" alt="Logo">
+            <h2>ASSIGNMENTX - BASIC 5</h2>
+        </div>
+        <div class="card">
+            <div class="timer-container"><div id="timer-bar"></div></div>
+            <div style="display: flex; justify-content: space-between; font-weight: 900; font-size: 0.85rem; margin-bottom: 12px; color: var(--wood-brown);">
+                <div>SCORE: <span id="score">0</span></div>
+                <div id="lvl-indicator">LEVEL 1</div>
+                <div>⏳ <span id="timer-text">30</span>s</div>
+            </div>
+            <div class="key-badge" id="key-ui">1000 cm³ = 1 Litre</div>
+            <div class="chart-frame" id="graph-ui">
+                <div id="liquid" class="liquid-fill" style="height: 0%;"></div>
+                <div style="z-index: 2; font-weight: 900; color: var(--wood-brown);" id="visual-label">1L</div>
+            </div>
+            <div class="question-box" id="question-ui">Converting volume to capacity...</div>
+            <input type="number" id="user-input" placeholder="?">
+            <button class="btn-green" onclick="submitAnswer()">VERIFY CAPACITY</button>
+            <div id="feedback" style="height: 25px; margin-top: 12px; font-weight: 900; font-size: 0.95rem;"></div>
+            <div class="tool-row">
+                <button class="btn-tool" onclick="getHint()">💡 HINT</button>
+                <button class="btn-tool btn-exit" onclick="exitToMenu()">🚪 EXIT</button>
+                <button class="btn-tool btn-mute" onclick="toggleAudio()">🔊 SFX: ON</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="scr-end" class="game-area-container">
+        <div class="card">
+            <h1 id="end-status" style="font-size: 1.8rem; margin-bottom: 15px; font-weight: 900; color: var(--wood-brown);">LAB REPORT COMPLETE</h1>
+            <div style="font-size: 5rem; font-weight: 900; color: var(--mathly-yellow); line-height: 1;" id="final-score">0</div>
+            <p id="end-msg" style="font-weight: 800; margin: 20px 0; color: var(--wood-brown); font-size: 1.1rem;"></p>
+            <button class="btn-green" onclick="location.reload()">RESTART LAB</button>
+        </div>
+    </div>
+
+    <div id="rules-modal" class="modal">
+        <div class="modal-content">
+            <h2 style="color: var(--wood-brown); margin-bottom: 20px; font-weight: 900; font-size: 1.4rem;">LAB PROTOCOLS</h2>
+            <ul style="text-align: left; font-size: 0.95rem; line-height: 1.8; font-weight: 700; list-style: none; margin-bottom: 25px;">
+                <li>💧 <span style="color:var(--mathly-blue)">CONVERT:</span> Remember $1000 cm^3 = 1$ Litre.</li>
+                <li>📦 <span style="color:var(--mathly-yellow)">VOLUME:</span> The space an object occupies.</li>
+                <li>🌟 <span style="color:var(--mathly-green)">GOAL:</span> Score 50+ to unlock advanced levels.</li>
+            </ul>
+            <button class="btn-green" onclick="toggleModal(false)">CONFIRMED</button>
+        </div>
+    </div>
+
+    <script>
+        const audio = { bg: new Audio("BGMSound.mp3"), correct: new Audio("correctanswer.mp3"), wrong: new Audio("wronganswer.mp3") };
+        audio.bg.loop = true;
+        let isMuted = false;
+
+        function toggleAudio() {
+            isMuted = !isMuted;
+            document.querySelectorAll('.btn-mute').forEach(b => b.innerText = isMuted ? "🔇 SFX: OFF" : "🔊 SFX: ON");
+            if(isMuted) audio.bg.pause(); else audio.bg.play().catch(()=>{});
+        }
+
+        const canvas = document.getElementById('bg-canvas');
+        const ctx = canvas.getContext('2d');
+        let symbols = [];
+        const MATHLY_COLORS = ["#e84118", "#fbc531", "#2ecc71", "#00d2ff"]; 
+
+        function initBG() {
+            canvas.width = window.innerWidth; canvas.height = window.innerHeight;
+            symbols = Array.from({length: 40}, () => ({
+                x: Math.random()*canvas.width, 
+                y: Math.random()*canvas.height - canvas.height,
+                char: ['L','cm³','ml','m³','='][Math.floor(Math.random()*5)],
+                size: Math.random()*25 + 20, 
+                speed: Math.random()*1.5 + 1.0, 
+                color: MATHLY_COLORS[Math.floor(Math.random()*4)]
+            }));
+        }
+        function drawBG() {
+            ctx.clearRect(0,0,canvas.width,canvas.height);
+            symbols.forEach(s => {
+                ctx.fillStyle = s.color; ctx.font = `900 ${s.size}px Inter`;
+                ctx.fillText(s.char, s.x, s.y);
+                s.y += s.speed; 
+                if(s.y > canvas.height + 50) { s.y = -50; s.x = Math.random()*canvas.width; }
+            });
+            requestAnimationFrame(drawBG);
+        }
+        initBG(); drawBG();
+
+        let storageKey = 'capacity_master_b5';
+        let progress = JSON.parse(localStorage.getItem(storageKey)) || { unlocked: [1] };
+        let state = { score: 0, qIdx: 1, currentLvl: 1, target: 0, timer: null, mode: 'cmToL' };
+
+        function startMission() {
+            if(!isMuted) audio.bg.play().catch(()=>{});
+            document.getElementById('scr-start').classList.remove('active');
+            document.getElementById('scr-game').classList.add('active');
+            state.score = 0; state.qIdx = 1;
+            document.getElementById('score').innerText = '0';
+            generateChallenge();
+        }
+
+        function renderMap() {
+            const mapUi = document.getElementById('map-ui');
+            mapUi.innerHTML = '';
+            for(let i=1; i<=3; i++) {
+                const unlocked = progress.unlocked.includes(i);
+                const dot = document.createElement('div');
+                dot.className = `lvl-dot ${unlocked ? '' : 'locked'} ${state.currentLvl === i ? 'active-lvl' : ''}`;
+                dot.innerText = unlocked ? i : '🔒';
+                if(unlocked) dot.onclick = () => { state.currentLvl = i; renderMap(); };
+                mapUi.appendChild(dot);
+            }
+        }
+        renderMap();
+
+        function generateChallenge() {
+            const qBox = document.getElementById('question-ui');
+            const liquid = document.getElementById('liquid');
+            const visualLabel = document.getElementById('visual-label');
+            
+            let val;
+            if(state.currentLvl === 1) {
+                // Basic 1L to 1000cm3
+                val = Math.floor(Math.random() * 10) + 1;
+                state.mode = Math.random() > 0.5 ? 'cmToL' : 'LToCm';
+                if(state.mode === 'cmToL') {
+                    qBox.innerHTML = `Convert <b>${val * 1000} cm³</b> to Litres.`;
+                    state.target = val;
+                } else {
+                    qBox.innerHTML = `Convert <b>${val} Litres</b> to cubic cm (cm³).`;
+                    state.target = val * 1000;
+                }
+                liquid.style.height = (val * 10) + "%";
+                visualLabel.innerText = `${val}L`;
+            } else if (state.currentLvl === 2) {
+                // Higher values + decimals
+                val = (Math.floor(Math.random() * 20) + 1) * 0.5;
+                state.mode = 'cmToL';
+                qBox.innerHTML = `A tank holds <b>${val * 1000} cm³</b>. How many Litres is that?`;
+                state.target = val;
+                liquid.style.height = (val * 5) + "%";
+                visualLabel.innerText = `${val}L`;
+            } else {
+                // m3 and Litres (1m3 = 1000L)
+                val = Math.floor(Math.random() * 5) + 1;
+                qBox.innerHTML = `Convert <b>${val} m³</b> to Litres. (Hint: 1m³ = 1000L)`;
+                state.target = val * 1000;
+                liquid.style.height = "100%";
+                visualLabel.innerText = `${val}m³`;
+            }
+
+            document.getElementById('user-input').value = '';
+            document.getElementById('user-input').focus();
+            document.getElementById('feedback').innerText = '';
+            runTimer();
+        }
+
+        function runTimer() {
+            clearInterval(state.timer);
+            let t = 30;
+            state.timer = setInterval(() => {
+                t--;
+                document.getElementById('timer-text').innerText = t;
+                document.getElementById('timer-bar').style.width = (t/30)*100 + "%";
+                if(t <= 0) submitAnswer(true);
+            }, 1000);
+        }
+
+        function submitAnswer(timeout = false) {
+            clearInterval(state.timer);
+            const val = parseFloat(document.getElementById('user-input').value);
+            const isCorrect = !timeout && val === state.target;
+            const fb = document.getElementById('feedback');
+            
+            if(isCorrect) {
+                state.score += 10;
+                fb.innerText = "✓ CAPACITY MATCHED!"; fb.style.color = "var(--mathly-green)";
+                if(!isMuted) audio.correct.play();
+            } else {
+                fb.innerText = "✗ LEAK DETECTED! TARGET: " + state.target; fb.style.color = "var(--mathly-red)";
+                if(!isMuted) audio.wrong.play();
+            }
+            document.getElementById('score').innerText = state.score;
+            setTimeout(() => { if(state.qIdx < 5) { state.qIdx++; generateChallenge(); } else { endGame(); } }, 2000);
+        }
+
+        function endGame() {
+            document.getElementById('scr-game').classList.remove('active');
+            document.getElementById('scr-end').classList.add('active');
+            document.getElementById('final-score').innerText = state.score;
+            const msg = document.getElementById('end-msg');
+            if(state.score >= 40) {
+                msg.innerText = "Fantastic! You are a Capacity Master!";
+                if(state.currentLvl < 3 && !progress.unlocked.includes(state.currentLvl + 1)) {
+                    progress.unlocked.push(state.currentLvl + 1);
+                    localStorage.setItem(storageKey, JSON.stringify(progress));
+                }
+            } else { msg.innerText = "The tank is empty! Try again to improve your accuracy."; }
+        }
+
+        function exitToMenu() {
+            if (confirm("Abandon lab experiment?")) {
+                clearInterval(state.timer);
+                document.getElementById('scr-game').classList.remove('active');
+                document.getElementById('scr-start').classList.add('active');
+                renderMap();
+            }
+        }
+
+        function getHint() {
+            let hintText = state.currentLvl < 3 ? "Divide cm³ by 1000 to get Litres." : "Multiply m³ by 1000 to get Litres.";
+            document.getElementById('feedback').innerText = `HINT: ${hintText}`;
+            document.getElementById('feedback').style.color = "var(--mathly-yellow)";
+        }
+
+        function toggleModal(s) { document.getElementById('rules-modal').style.display = s ? 'flex' : 'none'; }
+        function resetData() { if(confirm("Clear progress?")) { localStorage.removeItem(storageKey); location.reload(); } }
+        document.getElementById('user-input').addEventListener('keypress', (e) => { if(e.key === 'Enter') submitAnswer(); });
+        window.addEventListener('resize', initBG);
+    </script>
+</body>
+</html>
